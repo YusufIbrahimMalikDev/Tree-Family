@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Family Tree · Dua Garis Orang Tua · Custom Warna Relasi</title>
+    <link rel='stylesheet' href='style.css'>
+</head>
+<body>
+
+<div class="drag-container" id="dragContainer">
+    <div class="tree-container-relative" id="treeRelativeContainer">
+        <div class="tree" id="familyTree"></div>
+        <div class="relation-svg-layer" id="relationSvgLayer"></div>
+    </div>
+</div>
+
+<div class="toggle-container">
+    <span>🎯 Tombol Aksi</span>
+    <label><input type="checkbox" id="showButtonsCheckbox" checked onchange="toggleActionButtons()"></label>
+</div>
+
+<button class="toggle-controls-btn" id="toggleControlsBtn" onclick="toggleFloatingControls()">🎮 Sembunyikan Kontrol</button>
+
+<div class="controls" id="floatingControls">
+    <button onclick="zoomIn()">🔍 Zoom In</button>
+    <button onclick="zoomOut()">🔍 Zoom Out</button>
+    <button onclick="resetZoom()">⟳ Reset</button>
+    <button onclick="printTree()">🖨️ Cetak</button>
+    <button onclick="toggleDarkMode()">🌓 Dark Mode</button>
+    <button class="relation-btn" onclick="openRelationModal()">🔗 Tambah Relasi</button>
+    <button class="relation-btn" onclick="openDeleteRelationModal()" style="background:#9e5e3a;">🗑️ Hapus Relasi</button>
+    <button class="color-btn" onclick="openColorModal()">🎨 Warna Garis</button>
+    <button class="json-btn" onclick="openJsonModal()">💾 JSON</button>
+</div>
+
+<button class="fab-add" onclick="openAddMemberModal()">+</button>
+
+<!-- MODAL TAMBAH ANGGOTA -->
+<div id="addMemberModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h2>➕ Tambah Anggota</h2><button class="close" onclick="closeAddMemberModal()">&times;</button></div>
+        <div class="modal-body">
+            <div class="form-group"><label>📝 Nama Lengkap</label><input type="text" id="modalNameInput" placeholder="Nama"></div>
+            <div class="form-group"><label>⚧ Jenis Kelamin</label><select id="modalGenderSelect"><option value="male">👨 Laki-laki</option><option value="female">👩 Perempuan</option></select></div>
+            <div class="form-group"><label>👨 Pilih AYAH (opsional)</label><select id="modalFatherSelect"><option value="">-- Tidak pilih (akar bebas) --</option></select></div>
+            <div class="form-group"><label>👩 Pilih IBU (opsional)</label><select id="modalMotherSelect"><option value="">-- Tidak pilih (akar bebas) --</option></select></div>
+            <div class="info-text">✨ <strong>Tanpa memilih Ayah & Ibu</strong> = anggota berdiri sendiri <strong>tanpa garis penghubung</strong> (akar terpisah). Pilih salah satu atau kedua orang tua untuk menyambung ke pohon.</div>
+            <div class="button-group"><button class="primary" onclick="addMemberWithParents()">➕ Tambah</button><button class="secondary" onclick="closeAddMemberModal()">Batal</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL TAMBAH RELASI -->
+<div id="relationModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h2>🔗 Relasi</h2><button class="close" onclick="closeRelationModal()">&times;</button></div>
+        <div class="modal-body">
+            <div class="form-group"><label>Anggota 1</label><select id="relationMember1Select"></select></div>
+            <div class="form-group"><label>Anggota 2</label><select id="relationMember2Select"></select></div>
+            <div class="form-group"><label>Label (opsional)</label><input type="text" id="relationLabelInput" placeholder="Saudara, Pasangan, dll"></div>
+            <div class="button-group"><button class="primary" onclick="saveRelation()">Simpan</button><button class="secondary" onclick="closeRelationModal()">Batal</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL HAPUS RELASI -->
+<div id="deleteRelationModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h2>🗑️ Hapus Relasi</h2><button class="close" onclick="closeDeleteRelationModal()">&times;</button></div>
+        <div class="modal-body"><div id="relationListContainer" class="relation-list"></div><div class="button-group"><button class="secondary" onclick="closeDeleteRelationModal()">Tutup</button></div></div>
+    </div>
+</div>
+
+<!-- MODAL EDIT -->
+<div id="editModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>✏️ Edit</h2><button class="close" onclick="closeEditModal()">&times;</button></div><div class="modal-body"><div class="form-group"><label>Nama Baru</label><input type="text" id="editNameInput"></div><div class="form-group"><label>Gender</label><select id="editGenderSelect"><option value="male">Laki</option><option value="female">Perempuan</option></select></div><div class="button-group"><button class="primary" onclick="saveEdit()">Simpan</button><button class="secondary" onclick="closeEditModal()">Batal</button></div></div></div></div>
+
+<!-- MODAL WARNA GARIS RELASI -->
+<div id="colorModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h2>🎨 Ubah Warna Garis Relasi</h2><button class="close" onclick="closeColorModal()">&times;</button></div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>🌈 Pilih Warna Garis Relasi (Custom & Ibu)</label>
+                <div class="color-picker-modern">
+                    <input type="color" id="relationColorPicker" value="#2e7d64">
+                    <div class="preview-box" id="colorPreviewBox" style="background:#2e7d64;"></div>
+                    <label class="transparent-option" id="transparentLabel">
+                        <input type="checkbox" id="transparentCheckbox"> 
+                        <span>🌀 Transparan</span>
+                    </label>
+                    <span class="hex-label" id="hexColorLabel">#2e7d64</span>
+                </div>
+                <div class="info-text" style="margin-top: 16px;">
+                    💡 Warna ini akan digunakan untuk:<br>
+                    • Garis hubungan antar anggota (custom relasi)<br>
+                    • Garis penghubung Ibu (jika ayah & ibu terdaftar)<br>
+                    • Teks label relasi (ikon ibu & label custom)
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="primary" onclick="applyRelationColor()">✨ Terapkan</button>
+                <button class="secondary" onclick="resetRelationColor()">⟳ Reset</button>
+                <button class="secondary" onclick="closeColorModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL JSON DATA -->
+<div id="jsonModal" class="modal">
+    <div class="modal-content" style="max-width: 650px;">
+        <div class="modal-header"><h2>💾 Data JSON</h2><button class="close" onclick="closeJsonModal()">&times;</button></div>
+        <div class="modal-body">
+            <div class="info-text">
+                📦 Simpan data keluarga sebagai JSON. Data akan otomatis tersimpan di browser Anda (localStorage).
+            </div>
+            <div class="json-actions">
+                <button class="btn-export" onclick="exportJson()">📤 Ekspor & Simpan</button>
+                <button class="btn-import" onclick="importJson()">📥 Impor dari Text</button>
+                <button class="btn-copy" onclick="copyJson()">📋 Salin</button>
+                <button class="btn-clear" onclick="clearAllData()">🗑️ Hapus Semua Data</button>
+            </div>
+            <textarea class="json-textarea" id="jsonTextArea" placeholder="Data JSON akan muncul di sini..."></textarea>
+            <div id="jsonStatus" class="json-status" style="display:none;"></div>
+            <div class="button-group" style="margin-top:12px;">
+                <button class="secondary" onclick="closeJsonModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
